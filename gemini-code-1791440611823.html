@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seat Monitoring Bus</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #050b14;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 1100px;
+      background: #09111e;
+      border: 1px solid #162438;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .time-info {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .clock {
+      font-size: 38px;
+      font-weight: 300;
+      letter-spacing: 1px;
+    }
+
+    .meta-data {
+      font-size: 11px;
+      color: #5d7593;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      background: #0d2038;
+      border: 1px solid #1a385c;
+      color: #7aa2cf;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-volt {
+      background: #0c1c30;
+      border: 1px solid #1e3a5f;
+      color: #38bdf8;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* Sub Header */
+    .title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .badge-title {
+      background: #0d1a2d;
+      border: 1px solid #1c3352;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 1.2px;
+      color: #ffffff;
+    }
+
+    .status-badge {
+      border: 1px solid #00e5ff33;
+      background: #002b3633;
+      color: #00f2fe;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot-pulse {
+      width: 7px;
+      height: 7px;
+      background: #00e5ff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00e5ff;
+    }
+
+    /* Bus Deck Frame */
+    .bus-frame {
+      background: #070e1a;
+      border: 2px solid #152438;
+      border-radius: 28px;
+      padding: 16px 20px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Cockpit / Driver Area */
+    .cockpit {
+      width: 90px;
+      border-right: 1px solid #1a2c42;
+      padding-right: 12px;
+      margin-right: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 180px;
+      position: relative;
+    }
+
+    /* Lampu Depan Bus */
+    .headlight {
+      position: absolute;
+      left: -28px;
+      width: 8px;
+      height: 18px;
+      background: #eab308;
+      border-radius: 4px;
+      box-shadow: -8px 0 16px #eab308;
+    }
+    .headlight.top { top: 12px; }
+    .headlight.bot { bottom: 12px; }
+
+    .driver-seat, .conductor-seat {
+      width: 32px;
+      height: 32px;
+      border: 1px dashed #334e68;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #486581;
+      font-weight: bold;
+    }
+
+    /* Seat Grid Layout */
+    .cabin-grid {
+      display: flex;
+      flex-grow: 1;
+      justify-content: space-between;
+      height: 180px;
+    }
+
+    .seat-bay {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid #162438;
+      padding-right: 10px;
+      margin-right: 8px;
+      flex: 1;
+    }
+
+    .seat-bay:last-child {
+      border-right: none;
+      padding-right: 0;
+      margin-right: 0;
+    }
+
+    .seat-pair-row {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    /* Kursi Bus SVG Styling */
+    .seat {
+      width: 32px;
+      height: 34px;
+      background: #091322;
+      border: 1.5px solid #00f2fe;
+      border-radius: 7px 7px 5px 5px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #00f2fe;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(0, 242, 254, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    /* Detail Sandaran & Headrest Kursi */
+    .seat::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      width: 18px;
+      height: 4px;
+      background: #00f2fe;
+      border-radius: 2px;
+    }
+
+    /* Status Kursi Terisi */
+    .seat.occupied {
+      border-color: #ef4444;
+      color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+    .seat.occupied::before {
+      background: #ef4444;
+    }
+
+    /* Bottom Stats Summary */
+    .stats-footer {
+      display: flex;
+      justify-content: space-around;
+      padding-top: 10px;
+      border-top: 1px solid #101c2e;
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4b647f;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .stat-card .value span {
+      font-size: 13px;
+      font-weight: 400;
+      color: #7b8ea3;
+      margin-left: 4px;
+    }
+
+    .stat-card.occupied .value {
+      color: #ef4444;
+    }
+
+    .stat-card.empty .value {
+      color: #00e5ff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    <!-- Header Atas -->
+    <div class="top-bar">
+      <div class="time-info">
+        <div class="clock" id="clock">13:17</div>
+        <div class="meta-data">
+          <div>📍 LOCATING...</div>
+          <div id="date-display">SENIN, 28 SEP 2026</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn">⚙ SETTING WI-FI</button>
+        <button class="btn">📄 LOG</button>
+        <div class="badge-volt">⚡ 24.0V</div>
+      </div>
+    </div>
+
+    <!-- Sub Bar Label -->
+    <div class="title-bar">
+      <div class="badge-title">SEAT MONITORING BUS</div>
+      <div class="status-badge">
+        <div class="dot-pulse"></div>
+        SISTEM ONLINE (BRIDGE)
+      </div>
+    </div>
+
+    <!-- Body Layout Bus -->
+    <div class="bus-frame">
+      <div class="headlight top"></div>
+      <div class="headlight bot"></div>
+
+      <!-- Area Kemudi & Pintu Depan -->
+      <div class="cockpit">
+        <div class="driver-seat">DRV</div>
+        <div class="conductor-seat">RON</div>
+      </div>
+
+      <!-- Kompartemen Penumpang -->
+      <div class="cabin-grid">
+        <!-- Kolom 1 (Baris Depan) -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="A">A</div>
+            <div class="seat" data-id="B">B</div>
+          </div>
+          <div class="seat-pair-row"></div>
+        </div>
+
+        <!-- Kolom 2 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="3B">3B</div>
+            <div class="seat" data-id="3A">3A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="2B">2B</div>
+            <div class="seat" data-id="2A">2A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="1B">1B</div>
+            <div class="seat" data-id="1A">1A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 3 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="6B">6B</div>
+            <div class="seat" data-id="6A">6A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="5B">5B</div>
+            <div class="seat" data-id="5A">5A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="4B">4B</div>
+            <div class="seat" data-id="4A">4A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 4 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="9B">9B</div>
+            <div class="seat" data-id="9A">9A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="8B">8B</div>
+            <div class="seat" data-id="8A">8A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="7B">7B</div>
+            <div class="seat" data-id="7A">7A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 5 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="12B">12B</div>
+            <div class="seat" data-id="12A">12A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="11B">11B</div>
+            <div class="seat" data-id="11A">11A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="10A">10A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 6 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="15B">15B</div>
+            <div class="seat" data-id="15A">15A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="14B">14B</div>
+            <div class="seat" data-id="14A">14A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="13B">13B</div>
+            <div class="seat" data-id="13A">13A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 7 -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="18B">18B</div>
+            <div class="seat" data-id="18A">18A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="17B">17B</div>
+            <div class="seat" data-id="17A">17A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="16B">16B</div>
+            <div class="seat" data-id="16A">16A</div>
+          </div>
+        </div>
+
+        <!-- Kolom 8 (Paling Belakang) -->
+        <div class="seat-bay">
+          <div class="seat-pair-row">
+            <div class="seat" data-id="21B">21B</div>
+            <div class="seat" data-id="21A">21A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="20B">20B</div>
+            <div class="seat" data-id="20A">20A</div>
+          </div>
+          <div class="seat-pair-row">
+            <div class="seat" data-id="19B">19B</div>
+            <div class="seat" data-id="19A">19A</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ringkasan Statistik Bawah -->
+    <div class="stats-footer">
+      <div class="stat-card">
+        <div class="label">Kapasitas Armada</div>
+        <div class="value" id="total-seat">43 <span>Jok</span></div>
+      </div>
+      <div class="stat-card occupied">
+        <div class="label">Terisi (Occupied)</div>
+        <div class="value" id="occupied-seat">0 <span>Pax</span></div>
+      </div>
+      <div class="stat-card empty">
+        <div class="label">Kosong (Available)</div>
+        <div class="value" id="empty-seat">43 <span>Jok</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Interaktivitas demo klik & kalkulasi otomatis untuk ESP32
+    const seats = document.querySelectorAll('.seat');
+    const totalEl = document.getElementById('total-seat');
+    const occEl = document.getElementById('occupied-seat');
+    const emptyEl = document.getElementById('empty-seat');
+
+    function updateCounter() {
+      const total = seats.length;
+      const occupied = document.querySelectorAll('.seat.occupied').length;
+      const empty = total - occupied;
+
+      occEl.innerHTML = `${occupied} <span>Pax</span>`;
+      emptyEl.innerHTML = `${empty} <span>Jok</span>`;
+    }
+
+    seats.forEach(seat => {
+      seat.addEventListener('click', () => {
+        seat.classList.toggle('occupied');
+        updateCounter();
+      });
+    });
+
+    // Update Jam Real-time
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
